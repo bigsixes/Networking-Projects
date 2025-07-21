@@ -1,0 +1,198 @@
+en 
+conf t
+hostname CORE-SW1
+
+line console 0
+password Cisco
+login
+logging synchronous 
+exec-timeout 3 0
+exit
+
+enable password Cisco
+banner motd ###NO UNAUTHORIZED ACCESS###
+no ip domain-lookup
+
+service password-encryption
+
+username Cisco password Cisco
+ip domain-name cisco.com
+crypto key generate rsa general-keys modulus 1024 
+ip ssh version 2
+
+line vty 0 15
+login local 
+transport input ssh
+exit
+
+access-list 1 permit 192.168.10.0 0.0.0.255 
+access-list 1 deny any
+
+line vty 0 15
+access-class 1 in
+exit 
+
+do wr
+
+
+
+int range f0/1-2 
+switchport mode trunk
+
+vlan 10
+name MGT
+
+vlan 20
+name LAN
+
+vlan 50
+name WLAN
+
+vlan 70
+name VOIP
+
+vlan 199
+name BLACKHOLE
+
+
+INT range F0/3-4
+switchport mode access 
+switchport access vlan 20
+exit
+
+int range f0/5-6
+switchport mode access 
+no switchport access vlan 70
+switchport voice vlan 70
+
+int f0/7
+switchport mode access
+switchport access vlan 50
+
+int range f0/8-24,g0/1-2
+switchport mode access
+switchport access vlan 199
+shutdown 
+
+do wr
+
+
+
+INSIDE SERVERS (vlans)
+int range f0/1-2, F0/4
+switchport mode trunk
+
+vlan 10
+name MGT
+
+vlan 20
+name LAN
+
+vlan 50
+name WLAN
+
+vlan 70
+name VOIP
+
+vlan 90
+name INSIDE-SERVERS
+
+
+INT range F0/5-7
+switchport mode access 
+switchport access vlan 90
+exit
+
+int f0/3
+switchport mode access
+switchport access vlan 50
+
+do wr
+
+
+CORE SWITCH CONFIG (VLANS)
+
+int range G1/0/1-6
+switchport mode trunk
+
+vlan 10
+name MGT
+
+vlan 20
+name LAN
+
+vlan 50
+name WLAN
+
+vlan 70
+name VOIP
+
+vlan 90
+name INSIDE-SERVERS
+
+do wr
+
+SPANNING-TREE AND BPDUGUARD ACCESS SWITCHES CONFIG
+int range f0/3-24
+spanning-tree portfast 
+spanning-tree bpduguard enable
+do wr
+
+SPANNING TREE DMZ SWITCHES CONFIG
+int range f0/1-24
+spanning-tree portfast 
+spanning-tree bpduguard enable
+do wr
+
+
+ETHERCHANNEL CONFIGURATIONS
+int range g1/0/7-9
+channel-group 1 mode active 
+int port-channel 1
+switchport mode trunk
+do wr
+
+SUBNETTING & IP ADDRESSING 
+
+Mgt - 192.168.10.0/24
+  LAN - 172.16.0.0/16
+  WLAN - 10.20.0.0/16
+  VoIP - 172.30.0.0/16
+  INSIDE SERVERS - 10.11.11.0/27
+
+
+INTERVLAN ROUTING AND HSRP
+!
+interface Vlan10
+ ip address 192.168.10.2 255.255.255.0
+ ip helper-address 10.11.11.36
+ standby 10 ip 192.168.10.1
+!
+interface Vlan20
+ ip address 172.16.0.2 255.255.0.0
+ ip helper-address 10.11.11.36
+ standby 20 ip 172.16.0.1
+!
+interface Vlan50
+ ip address 10.20.0.3 255.255.0.0
+ ip helper-address 10.11.11.36
+ standby 50 ip 10.20.0.1
+!
+interface Vlan90
+ ip address 10.11.11.35 255.255.255.224
+ standby 90 ip 10.11.11.33
+!
+
+
+
+!
+router ospf 35
+ router-id 1.1.2.2
+ network 10.2.2.8 0.0.0.3 area 0
+ network 10.2.2.12 0.0.0.3 area 0
+ network 192.168.10.0 0.0.0.255 area 0
+ network 172.16.0.0 0.0.255.255 area 0
+ network 10.20.0.0 0.0.255.255 area 0
+ network 10.11.11.32 0.0.0.31 area 0
+!
+
