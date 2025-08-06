@@ -1,0 +1,46 @@
+en
+conf t
+hostname SW8
+banner motd "UNAUTHORIZED ACCESS PROHIBITED, THIS IS PUNISHABLE BY LAW!!"
+enable password cisco
+
+line console 0
+password cisco
+login
+logging synchronous
+exec-timeout 2
+
+
+line vty 0 15
+password cisco
+login
+logging synchronous
+exec-timeout 2
+
+
+service password-encryption
+no ip domain-lookup
+do wr
+
+int range f0/-1
+channel-group 1 mode passive/active/desirable/auto
+int port-channel 1
+switchport mode trunk
+do wr
+
+
+
+vtp domain abcd.com
+vtp version 2
+vtp password cisco
+vtp mode server
+do wr
+
+vtp domain abcd.com
+vtp version 2
+vtp password cisco
+vtp mode client
+do wr
+
+int port-channel 1
+switchport trunk allowed vlan except 20
