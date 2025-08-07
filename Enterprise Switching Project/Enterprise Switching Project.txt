@@ -1,0 +1,21 @@
+BASIC SWITCH CONFIGURATION
+
+en
+conf t
+hostname Stores-Dept
+banner motd "UNUATHORIZED ACCESS PROHIBITED!!!"
+no ip domain-lookup
+
+line console 0
+password cisco
+login 
+logging synchronous 
+exec-timeout 2
+
+line console 0
+password cisco
+login
+logging synchronous 
+exec-timeout 2
+
+do wr
